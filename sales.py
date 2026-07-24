@@ -1,12 +1,30 @@
 # Imports
 import kagglehub
 import pandas as pd
+import sklearn
+import matplotlib.pyplot as plt
+from matplotlib import colormaps
 
-# Download latest version of Visuelle dataset
-path = kagglehub.dataset_download("konradb/visuelle-complete-dataset")
+# Make plots look neater
+plt.rc('font', size=10)
+plt.rc('axes', labelsize=10, titlesize=10)
+plt.rc('legend', fontsize=10)
+plt.rc('xtick', labelsize=8)
+plt.rc('ytick', labelsize=8)
 
-print("Path to dataset files:", path)
 
-df_loaded = pd.read_csv(path + '/train.csv')
+def load_visuelle():
+    # Download latest version of Visuelle dataset
+    path = kagglehub.dataset_download("konradb/visuelle-complete-dataset")
 
-print(df_loaded.head(10))
+    return pd.read_csv(path + '/train.csv')
+
+visuelle_full = load_visuelle()
+    
+
+# print(visuelle_full.info())
+
+# visuelle_full.hist(bins='auto', figsize=(12, 8), color='pink')
+# plt.show()
+
+
