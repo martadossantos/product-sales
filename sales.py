@@ -4,6 +4,7 @@ import pandas as pd
 import sklearn
 import matplotlib.pyplot as plt
 from matplotlib import colormaps
+import numpy as np
 
 # Make plots look neater
 plt.rc('font', size=10)
@@ -19,12 +20,8 @@ def load_visuelle():
 
     return pd.read_csv(path + '/train.csv')
 
-visuelle_full = load_visuelle()
-    
+df = load_visuelle()
 
-# print(visuelle_full.info())
-
-# visuelle_full.hist(bins='auto', figsize=(12, 8), color='pink')
-# plt.show()
-
+week_cols = [str(w) for w in range(12)]
+weeks = range(12)
 
