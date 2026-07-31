@@ -15,14 +15,11 @@ plt.rc('xtick', labelsize=8)
 plt.rc('ytick', labelsize=8)
 
 
-def load_visuelle():
-    # Download latest version of Visuelle dataset
-    path = kagglehub.dataset_download("konradb/visuelle-complete-dataset")
+# Download latest version of Visuelle dataset
+path = kagglehub.dataset_download("konradb/visuelle-complete-dataset")
 
+def load_visuelle():
     return pd.read_csv(path + '/train.csv')
 
-df = load_visuelle()
-
-week_cols = [str(w) for w in range(12)]
-weeks = range(12)
-
+df_raw = load_visuelle()
+df = df_raw.copy()
