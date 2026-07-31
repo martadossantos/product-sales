@@ -23,3 +23,4 @@ def load_visuelle():
 
 df_raw = load_visuelle()
 df = df_raw.copy()
+
