@@ -24,3 +24,8 @@ def load_visuelle():
 df_raw = load_visuelle()
 df = df_raw.copy()
 
+
+## Build the target feature
+target_weeks = range(6)
+first_six_weeks_cols = [f"W{w + 1:02d}" for w in first_six_weeks]
+
