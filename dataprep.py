@@ -75,3 +75,16 @@ def sum_weeks(df, target_weeks):
 # Function to assign zones
 def compute_zones(values, edges):
     return pd.cut(values, edges, labels=False)
+
+
+# Function to assign labels
+def derive_cuts(target):
+    cuts = target.quantile(list(quantiles.values())).to_numpy()
+    assert np.all(np.diff(cuts) > 0), f"cut points not increasing: {cuts}"
+    return cuts
+
+# Values that fall on the same cut point get assigned into the lower zone
+# Cuts have to be calculated before
+def apply_cuts(target, cuts):
+    return np.searchsorted(cuts, target.to_numpy(), side='left')
+    
