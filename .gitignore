@@ -1,1 +1,3 @@
 00_quicktests.ipynb
+__pycache__/
+*.pyc

@@ -3,7 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import colormaps
 import numpy as np
-from PIL import Image
 
 
 # Thresholds
