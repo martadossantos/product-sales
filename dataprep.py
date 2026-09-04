@@ -1,23 +1,9 @@
 # Imports
-import kagglehub
-import os
 import pandas as pd
-import sklearn
 import matplotlib.pyplot as plt
 from matplotlib import colormaps
 import numpy as np
 from PIL import Image
-
-# # Download latest version of Visuelle dataset
-# path = kagglehub.dataset_download("konradb/visuelle-complete-dataset")
-
-
-# # Load data
-# def load_visuelle():
-#     return pd.read_csv(path + '/train.csv')
-
-# df_raw = load_visuelle()
-# df = df_raw.copy()
 
 
 # Thresholds
@@ -89,23 +75,3 @@ def derive_cuts(target):
 def apply_cuts(target, cuts):
     return np.searchsorted(cuts, target.to_numpy(), side='left')
     
-
-# Pad the images so that they're squares
-# To then use in the image embedder
-# Image is centered and white padding added around it
-# All images are RGBA
-
-def make_square(img, fill=(255, 255, 255)):
-    background = Image.new('RGBA', img.size, fill + (255,))
-    img = Image.alpha_composite(background, img).convert('RGB')
-
-    w, h = img.size
-
-    if w == h:
-        return img
-
-    s = max(w, h)
-    canvas = Image.new('RGB', (s, s), fill)
-    canvas.paste(img, ((s - w) // 2, (s - h) // 2))
-
-    return canvas
