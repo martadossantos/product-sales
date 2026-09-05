@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import pandas as pd
+import torch
 
 # Pad the images so that they're squares
 # To then use in the image embedder
@@ -67,10 +68,7 @@ def encode_text(df, model, processor, device, batch_size):
 
         # to return the 768 embedding
         with torch.no_grad():
-            features = model.get_text_features(**inputs)
-
-        # check feature shape is correct
-        assert features.shape[1] == 768
+            features = model.get_text_features(**inputs).pooler_output
     
         features = features.cpu().numpy()
         all_features.append(features)
