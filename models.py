@@ -14,9 +14,12 @@ conditions = [
     "learned"
 ]
 
+# grid with fixed settings
+# setting this up means that every condition has a limited amount of settings to try
 hidden_width_grid = [128, 256, 512]
 learning_rate_grid = [1e-3, 3e-4]
 
+# makes a settings sheet for each run
 def build_config(condition, hidden_width, learning_rate):
 
     if condition in conditions:
@@ -39,6 +42,7 @@ print(test_config_x is test_config_y)
 print(test_config_y["hidden_width"])
 
 
+# take a set of numbers and shrink them to a smaller learned summary
 def build_block(input_dim, output_dim, dropout):
     # one projection block
     # linear layer, non-linearity, dropout
@@ -55,6 +59,7 @@ block = build_block(768, 256, 0.2)
 print(block)
 
 
+# classifier
 def build_head(input_dim, hidden_width, dropout, n_classes):
     # classifier head
     # input_dim varies by condition
