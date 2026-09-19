@@ -17,7 +17,7 @@ conditions = [
 # grid with fixed settings
 # setting this up means that every condition has a limited amount of settings to try
 hidden_width_grid = [128, 256, 512]
-learning_rate_grid = [1e-3, 3e-4]
+learning_rate_grid = [1e-3]
 
 # makes a settings sheet for each run
 def build_config(condition, hidden_width, learning_rate):
@@ -123,10 +123,22 @@ class ConditionModel(nn.Module):
             self.image_tower = build_block(input_dim, hidden_width, dropout)
             self.head = build_head(fused_width, hidden_width, dropout, n_classes)
 
-
         # late fusion
-        # learned fusion  
+        # no shared head
+        # each modality runs until its own prediction
+        elif self.condition == "late":
+            self.text_tower = build_block(input_dim, hidden_width, dropout)
+            self.image_tower = build_block(input_dim, hidden_width, dropout)
+            self.text_head = build_head(hidden_width, hidden_width, dropout, n_classes)
+            self.image_head = build_head(hidden_width, hidden_width, dropout, n_classes)
 
+        # learned fusion  
+        elif self.condition == "learned":
+            fused_width = 2 * hidden_width
+            self.text_tower = build_block(input_dim, hidden_width, dropout)
+            self.image_tower = build_block(input_dim, hidden_width, dropout)
+            self.gate = nn.Linear(fused_width, 1)
+            self.head = build_head(fused_width, hidden_width, dropout, n_classes)
 
     def forward(self, text_embedding, image_embedding):
         # text only
@@ -147,12 +159,29 @@ class ConditionModel(nn.Module):
             text_hidden = self.text_tower(text_embedding)
             image_hidden = self.image_tower(image_embedding)
             hidden = torch.cat([text_hidden, image_hidden], dim=1)
-            
+
         # late fusion
+        elif self.condition == "late":
+            text_logits = self.text_head(self.text_tower(text_embedding))
+            image_logits = self.image_head(self.image_tower(image_embedding))
+
+            # combination is not learned
+            # separate return
+            return (text_logits + image_logits) / 2
+
         # learned fusion  
+        elif self.condition == "learned":
+            text_hidden = self.text_tower(text_embedding)
+            image_hidden = self.image_tower(image_embedding)
+
+            gate_input = torch.cat([text_hidden, image_hidden], dim=1)
+            gate_value = torch.sigmoid(self.gate(gate_input))
+
+            hidden = torch.cat(
+                [gate_value * text_hidden, (1 - gate_value) * image_hidden], dim=1
+            )
 
         return self.head(hidden)
-
 
 
 text_model = ConditionModel(build_config("text", 256, 1e-3))
