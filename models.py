@@ -98,7 +98,7 @@ class ConditionModel(nn.Module):
         dropout = config["dropout"]
         n_classes = config["n_classes"]
 
-        fused_width = hidden_width
+        
 
         # text only condition
         if self.condition == "text":
@@ -111,20 +111,43 @@ class ConditionModel(nn.Module):
             self.head = build_head(hidden_width, hidden_width, dropout, n_classes)  
 
         # early fusion
+        elif self.condition == "early":
+            fused_width = hidden_width
+            self.early_tower = build_block(2 * input_dim, hidden_width, dropout)
+            self.head = build_head(fused_width, hidden_width, dropout, n_classes)
+
         # intermediate fusion
+        elif self.condition == "intermediate":
+            fused_width = 2 * hidden_width
+            self.text_tower = build_block(input_dim, hidden_width, dropout)
+            self.image_tower = build_block(input_dim, hidden_width, dropout)
+            self.head = build_head(fused_width, hidden_width, dropout, n_classes)
+
+
         # late fusion
         # learned fusion  
-        
+
 
     def forward(self, text_embedding, image_embedding):
+        # text only
         if self.condition == "text":
             hidden = self.text_tower(text_embedding)
 
+        # image only
         elif self.condition == "image":
             hidden = self.image_tower(image_embedding)
 
         # early fusion
+        elif self.condition == "early":
+            combined = torch.cat([text_embedding, image_embedding], dim=1)
+            hidden = self.early_tower(combined)
+
         # intermediate fusion
+        elif self.condition == "intermediate":
+            text_hidden = self.text_tower(text_embedding)
+            image_hidden = self.image_tower(image_embedding)
+            hidden = torch.cat([text_hidden, image_hidden], dim=1)
+            
         # late fusion
         # learned fusion  
 
