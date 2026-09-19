@@ -88,5 +88,49 @@ print(head)
 #         return F.relu(self.conv2(x))
 
 
-# class ConditionModel(nn.Module):
-#     return self
+class ConditionModel(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.condition = config["condition"]
+
+        input_dim = config["input_dim"]
+        hidden_width = config["hidden_width"]
+        dropout = config["dropout"]
+        n_classes = config["n_classes"]
+
+        fused_width = hidden_width
+
+        # text only condition
+        if self.condition == "text":
+            self.text_tower = build_block(input_dim, hidden_width, dropout)
+            self.head = build_head(hidden_width, hidden_width, dropout, n_classes)
+
+        # image only condition
+        elif self.condition == "image":
+            self.image_tower = build_block(input_dim, hidden_width, dropout)
+            self.head = build_head(hidden_width, hidden_width, dropout, n_classes)  
+
+        # early fusion
+        # intermediate fusion
+        # late fusion
+        # learned fusion  
+        
+
+    def forward(self, text_embedding, image_embedding):
+        if self.condition == "text":
+            hidden = self.text_tower(text_embedding)
+
+        elif self.condition == "image":
+            hidden = self.image_tower(image_embedding)
+
+        # early fusion
+        # intermediate fusion
+        # late fusion
+        # learned fusion  
+
+        return self.head(hidden)
+
+
+
+text_model = ConditionModel(build_config("text", 256, 1e-3))
+image_model = ConditionModel(build_config("image", 256, 1e-3))
