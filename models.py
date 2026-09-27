@@ -140,7 +140,12 @@ class ConditionModel(nn.Module):
             self.gate = nn.Linear(fused_width, 1)
             self.head = build_head(fused_width, hidden_width, dropout, n_classes)
 
-    def forward(self, text_embedding, image_embedding):
+    # returns logits
+    # when return_gate = True it returns (logits, gate_value)
+    # gate_value is None for all conditions EXCEPT learned
+    def forward(self, text_embedding, image_embedding, return_gate=False):
+        gate_value = None
+
         # text only
         if self.condition == "text":
             hidden = self.text_tower(text_embedding)
@@ -167,7 +172,13 @@ class ConditionModel(nn.Module):
 
             # combination is not learned
             # separate return
-            return (text_logits + image_logits) / 2
+            logits = (text_logits + image_logits) / 2
+
+            if return_gate == True:
+                return logits, gate_value
+            else: 
+                return logits
+
 
         # learned fusion  
         elif self.condition == "learned":
@@ -181,7 +192,12 @@ class ConditionModel(nn.Module):
                 [gate_value * text_hidden, (1 - gate_value) * image_hidden], dim=1
             )
 
-        return self.head(hidden)
+        logits = self.head(hidden)
+
+        if return_gate == True:
+            return logits, gate_value
+        else:
+            return logits
 
 
 text_model = ConditionModel(build_config("text", 256, 1e-3))
