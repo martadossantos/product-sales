@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 
+# one model Class with six branches
+# everything is held constant apart from condition
+
 # dictionary to hold the different condition
 # comparions to be fed to the model
 
@@ -47,6 +50,9 @@ def build_block(input_dim, output_dim, dropout):
     # one projection block
     # linear layer, non-linearity, dropout
 
+    # the linear layer compresses the incoming numbers into a smaller set
+    # ReLU lets the network represent relationships that are not a straight line
+    # dropout switches off some units at random during training
     block = nn.Sequential(
         nn.Linear(input_dim, output_dim),
         nn.ReLU(),
@@ -89,6 +95,8 @@ print(head)
 
 
 class ConditionModel(nn.Module):
+    # the six conditions, selected by config
+
     def __init__(self, config):
         super().__init__()
         self.condition = config["condition"]
@@ -99,7 +107,6 @@ class ConditionModel(nn.Module):
         n_classes = config["n_classes"]
 
         
-
         # text only condition
         if self.condition == "text":
             self.text_tower = build_block(input_dim, hidden_width, dropout)
@@ -111,12 +118,17 @@ class ConditionModel(nn.Module):
             self.head = build_head(hidden_width, hidden_width, dropout, n_classes)  
 
         # early fusion
+        # raw embeddings are joined before anything is learned
+        # single tower sees all 768 * 2 numbers at once
+        # first layer holds twice the parameters at the same width
         elif self.condition == "early":
             fused_width = hidden_width
             self.early_tower = build_block(2 * input_dim, hidden_width, dropout)
             self.head = build_head(fused_width, hidden_width, dropout, n_classes)
 
         # intermediate fusion
+        # each modality is summarised separately first
+        # the two summaries are joined
         elif self.condition == "intermediate":
             fused_width = 2 * hidden_width
             self.text_tower = build_block(input_dim, hidden_width, dropout)
@@ -124,7 +136,7 @@ class ConditionModel(nn.Module):
             self.head = build_head(fused_width, hidden_width, dropout, n_classes)
 
         # late fusion
-        # no shared head
+        # no shared head, only condition with two heads
         # each modality runs until its own prediction
         elif self.condition == "late":
             self.text_tower = build_block(input_dim, hidden_width, dropout)
@@ -133,6 +145,10 @@ class ConditionModel(nn.Module):
             self.image_head = build_head(hidden_width, hidden_width, dropout, n_classes)
 
         # learned fusion  
+        # like intermediate, but with added gate
+        # gate reads both summaries and hands out one number
+        # per product deciding how much weight to give
+        # each modality
         elif self.condition == "learned":
             fused_width = 2 * hidden_width
             self.text_tower = build_block(input_dim, hidden_width, dropout)
@@ -155,17 +171,23 @@ class ConditionModel(nn.Module):
             hidden = self.image_tower(image_embedding)
 
         # early fusion
+        # joined before the tower
+        # fusion happens on the raw embeddings
         elif self.condition == "early":
             combined = torch.cat([text_embedding, image_embedding], dim=1)
             hidden = self.early_tower(combined)
 
         # intermediate fusion
+        # joined after each tower
+        # fusion happens on the summaries
         elif self.condition == "intermediate":
             text_hidden = self.text_tower(text_embedding)
             image_hidden = self.image_tower(image_embedding)
             hidden = torch.cat([text_hidden, image_hidden], dim=1)
 
         # late fusion
+        # returns early bc it has no shared head
+        # the two predictions are averaged with a fixed weight
         elif self.condition == "late":
             text_logits = self.text_head(self.text_tower(text_embedding))
             image_logits = self.image_head(self.image_tower(image_embedding))
@@ -185,6 +207,8 @@ class ConditionModel(nn.Module):
             text_hidden = self.text_tower(text_embedding)
             image_hidden = self.image_tower(image_embedding)
 
+            # the two summaries are scaled by the gate and its complement
+            # a product leaning towards text automatically leans away from image
             gate_input = torch.cat([text_hidden, image_hidden], dim=1)
             gate_value = torch.sigmoid(self.gate(gate_input))
 
